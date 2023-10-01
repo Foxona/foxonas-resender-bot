@@ -1,35 +1,33 @@
 import * as TelegramBot from "node-telegram-bot-api";
 require("dotenv").config();
 
-const token = process.env.TELEGRAM_BOT_TOKEN;
-const channelName = process.env.TELEGRAM_POST_CHANNEL_NAME;
-const chatName = process.env.TELEGRAM_POST_CHAT_NAME;
-const channelID = Number(process.env.TELEGRAM_POST_CHANNEL_ID)
+const { TELEGRAM_BOT_TOKEN, TELEGRAM_POST_CHANNEL_NAME, TELEGRAM_POST_CHAT_NAME, TELEGRAM_POST_CHANNEL_ID } = process.env;
 
-if (!token) {
+if (!TELEGRAM_BOT_TOKEN) {
   console.error("TELEGRAM_BOT_TOKEN is not set");
   process.exit(1);
 }
 
-if (!channelName || !chatName) {
-  console.error(
-    "TELEGRAM_POST_CHANNEL_NAME or TELEGRAM_POST_CHAT_NAME is not set"
-  );
+if (!TELEGRAM_POST_CHANNEL_NAME || !TELEGRAM_POST_CHAT_NAME) {
+  console.error("TELEGRAM_POST_CHANNEL_NAME or TELEGRAM_POST_CHAT_NAME is not set");
   process.exit(1);
 }
 
-const bot = new TelegramBot(token, { polling: true });
+const bot = new TelegramBot(TELEGRAM_BOT_TOKEN, { polling: true });
 
-bot.on("channel_post", (msg) => {
-  bot.getChat(channelName).then((channel) => {
-    if (channel.id !== channelID) return;
+bot.on("channel_post", async (msg) => {
 
-    bot.getChat(chatName).then((chat) => {
-      setTimeout(() => {
-        bot
-          .forwardMessage(chat.id, msg.chat.id, msg.message_id)
-          .then((res) => console.log(res));
-      }, 80000);
-    });
-  });
+  const channel = await bot.getChat(TELEGRAM_POST_CHANNEL_NAME);
+  if (channel.id !== Number(TELEGRAM_POST_CHANNEL_ID)) return;
+
+  const chat = await bot.getChat(TELEGRAM_POST_CHAT_NAME);
+
+  setTimeout(async () => {
+    try {
+      const res = await bot.forwardMessage(chat.id, msg.chat.id, msg.message_id);
+      console.log(res);
+    } catch (error) {
+      console.error("Error forwarding message:", error);
+    }
+  }, 80000);
 });
